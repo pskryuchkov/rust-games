@@ -1,4 +1,4 @@
-use engine::{Cell, Game, GameResult, DIM};
+use engine::{Game, GameResult, DIM};
 use std::io;
 use std::io::Write;
 
@@ -23,7 +23,7 @@ mod engine {
     pub const DIM: usize = 3;
 
     #[derive(Copy, Clone, PartialEq)]
-    pub enum Cell {
+    enum Cell {
         Empty = 0,
         Zero,
         Cross,
@@ -37,13 +37,13 @@ mod engine {
     }
 
     pub struct Game {
-        pub game: [[Cell; DIM]; DIM],
+        state: [[Cell; DIM]; DIM],
     }
 
     impl Game {
         pub fn new() -> Self {
             Game {
-                game: [[Cell::Empty; DIM]; DIM],
+                state: [[Cell::Empty; DIM]; DIM],
             }
         }
 
@@ -51,7 +51,7 @@ mod engine {
             println!("------------");
             for y in 0..DIM {
                 for x in 0..DIM {
-                    match self.game[y][x] {
+                    match self.state[y][x] {
                         Cell::Empty => print!("   |"),
                         Cell::Cross => print!(" x |"),
                         Cell::Zero => print!(" o |"),
@@ -65,8 +65,8 @@ mod engine {
 
         pub fn status(&self) -> GameResult {
             for y in 0..DIM {
-                if self.game[y].windows(2).all(|w| w[0] == w[1]) {
-                    match self.game[y][0] {
+                if self.state[y].windows(2).all(|w| w[0] == w[1]) {
+                    match self.state[y][0] {
                         Cell::Empty => continue,
                         Cell::Zero => return GameResult::ZeroWin,
                         Cell::Cross => return GameResult::CrossWin,
@@ -77,7 +77,7 @@ mod engine {
             for x in 0..DIM {
                 let mut col = [Cell::Empty; DIM];
                 for y in 0..DIM {
-                    col[y] = self.game[y][x]
+                    col[y] = self.state[y][x]
                 }
 
                 if col.windows(2).all(|w| w[0] == w[1]) {
@@ -91,7 +91,7 @@ mod engine {
 
             let mut diag = [Cell::Empty; DIM];
             for z in 0..DIM {
-                diag[z] = self.game[z][z]
+                diag[z] = self.state[z][z]
             }
             if diag.windows(2).all(|w| w[0] == w[1]) {
                 match diag[0] {
@@ -103,7 +103,7 @@ mod engine {
 
             let mut diag = [Cell::Empty; DIM];
             for z in 0..DIM {
-                diag[z] = self.game[z][2 - z]
+                diag[z] = self.state[z][DIM - 1 - z]
             }
             if diag.windows(2).all(|w| w[0] == w[1]) {
                 match diag[0] {
@@ -115,7 +115,7 @@ mod engine {
 
             for y in 0..DIM {
                 for x in 0..DIM {
-                    if self.game[y][x] == Cell::Empty {
+                    if self.state[y][x] == Cell::Empty {
                         return GameResult::WaitNextStep;
                     }
                 }
@@ -128,7 +128,7 @@ mod engine {
             let mut empty_positions: Vec<(usize, usize)> = Vec::new();
             for y in 0..DIM {
                 for x in 0..DIM {
-                    if self.game[y][x] == Cell::Empty {
+                    if self.state[y][x] == Cell::Empty {
                         empty_positions.push((x, y))
                     }
                 }
@@ -136,22 +136,28 @@ mod engine {
             let n_empty: u8 = empty_positions.len() as u8;
             if n_empty > 0 {
                 let r_num: usize = rand::thread_rng().gen_range(0..n_empty) as usize;
-                self.game[empty_positions[r_num].1][empty_positions[r_num].0] = Cell::Cross;
+                self.state[empty_positions[r_num].1][empty_positions[r_num].0] = Cell::Cross;
             }
+        }
+
+        pub fn is_empty(&self, x: usize, y: usize) -> bool {
+            self.state[y][x] == Cell::Empty
+        }
+
+        pub fn set(&mut self, x: usize, y: usize) {
+            self.state[y][x] = Cell::Zero
         }
     }
 }
 
 fn main() {
-    let mut input = String::new();
     let mut game = Game::new();
-    let (mut x, mut y);
 
     loop {
         print!("Ваш ход (x, y): ");
         io::stdout().flush().unwrap();
 
-        input = "".to_string();
+        let mut input = String::new();
         io::stdin().read_line(&mut input).expect("Ошибка ввода");
 
         let coords = parse_coords(&input, DIM);
@@ -162,10 +168,10 @@ fn main() {
             );
             continue;
         }
-        (x, y) = coords.unwrap();
+        let (x, y) = coords.unwrap();
 
-        if game.game[y][x] == Cell::Empty {
-            game.game[y][x] = Cell::Zero
+        if game.is_empty(x, y) {
+            game.set(x, y)
         } else {
             println!("Некорректный ввод. Клетка уже заполнена.")
         }
