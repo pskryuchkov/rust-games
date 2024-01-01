@@ -3,7 +3,7 @@ use rand::Rng;
 pub const GAME_DIM: usize = 3;
 
 #[derive(Copy, Clone, PartialEq)]
-enum Cell {
+pub enum Cell {
     Empty = 0,
     Zero,
     Cross,
@@ -19,12 +19,20 @@ pub enum GameResult {
 
 pub struct Game {
     state: [[Cell; GAME_DIM]; GAME_DIM],
+    user_cell: Cell,
+    machine_cell: Cell,
 }
 
 impl Game {
-    pub fn new() -> Self {
+    pub fn new(user_cell: Cell) -> Self {
         Game {
             state: [[Cell::Empty; GAME_DIM]; GAME_DIM],
+            user_cell: user_cell,
+            machine_cell: if user_cell == Cell::Cross {
+                Cell::Zero
+            } else {
+                Cell::Cross
+            },
         }
     }
 
@@ -116,7 +124,7 @@ impl Game {
         let n_empty: u8 = empty_positions.len() as u8;
         if n_empty > 0 {
             let r_num: usize = rand::thread_rng().gen_range(0..n_empty) as usize;
-            self.state[empty_positions[r_num].1][empty_positions[r_num].0] = Cell::Cross;
+            self.state[empty_positions[r_num].1][empty_positions[r_num].0] = self.machine_cell;
         }
     }
 
@@ -125,7 +133,7 @@ impl Game {
     }
 
     pub fn set(&mut self, x: usize, y: usize) {
-        self.state[y][x] = Cell::Zero
+        self.state[y][x] = self.user_cell
     }
 
     pub fn is_continued(&self, status: &GameResult) -> bool {

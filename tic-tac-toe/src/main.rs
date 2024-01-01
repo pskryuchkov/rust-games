@@ -1,8 +1,10 @@
 mod core;
 
-use core::{Game, GAME_DIM};
+use core::{Cell, Game, GAME_DIM};
 use std::io;
 use std::io::Write;
+
+pub const USER_CELL: Cell = Cell::Zero;
 
 fn parse_coords(s: &String, max_coord: usize) -> Result<(usize, usize), &'static str> {
     let mut parts = s.split_whitespace().map(|s| s.parse::<u32>());
@@ -20,7 +22,7 @@ fn parse_coords(s: &String, max_coord: usize) -> Result<(usize, usize), &'static
 }
 
 fn main() {
-    let mut game = Game::new();
+    let mut game = Game::new(USER_CELL);
 
     loop {
         print!("Ваш ход (x, y): ");
